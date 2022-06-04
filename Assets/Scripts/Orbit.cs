@@ -26,7 +26,7 @@ public class Orbit : MonoBehaviour
     public Transform i_node;
     public Transform RAAN_node;
     public Transform omega_node;
-    //public Transform nu_node;
+    public Transform nu_node;
     public Transform focus;
 
     public Transform RAAN_plane;
@@ -39,10 +39,10 @@ public class Orbit : MonoBehaviour
         transform.position = focus.position;
         a = 1;
         e = 0.5f;
-        i = Mathf.Deg2Rad * 45;
-        RAAN = Mathf.Deg2Rad * 30;
-        omega = Mathf.Deg2Rad * 90;
-        nu = Mathf.Deg2Rad * 135;
+        i = Mathf.Deg2Rad * 0;
+        RAAN = Mathf.Deg2Rad * 0;
+        omega = Mathf.Deg2Rad * 0;
+        nu = Mathf.Deg2Rad * 0;
         set_up_initial_positions();
     }
 
@@ -53,7 +53,13 @@ public class Orbit : MonoBehaviour
         omega_node.localPosition = new Vector3(a * (1 - e) * Mathf.Cos(omega), 0, a * (1 - e) * Mathf.Sin(omega));
         i_node.localPosition = new Vector3(0, Mathf.Sin(i), Mathf.Cos(i));
         RAAN_node.localPosition = new Vector3(a * (1 - e * e) * Mathf.Cos(RAAN), 0, a * (1 - e * e) * Mathf.Sin(RAAN));
-
+        
+        float u = omega + nu;
+        float r = a * (1 - e * e) / (1 + e * Mathf.Cos(nu));
+        //float x = r * (Mathf.Cos(u) * Mathf.Cos(RAAN) - Mathf.Sin(u) * Mathf.Cos(i) * Mathf.Sin(RAAN));
+        //float y = r * (Mathf.Cos(u) * Mathf.Sin(RAAN) + Mathf.Sin(u) * Mathf.Cos(i) * Mathf.Cos(RAAN));
+        //float z = r * (Mathf.Sin(u) * Mathf.Sin(i));
+        nu_node.localPosition = new Vector3(r*Mathf.Cos(nu), 0, r*Mathf.Sin(nu));
     }
 
 
@@ -62,12 +68,15 @@ public class Orbit : MonoBehaviour
     {
         //if (interactor != null) Debug.Log("Interacting");
         //else Debug.Log("Interacting");
-        compute_a();
-        compute_e();
+
         compute_RAAN();
         compute_i();
         compute_omega();
-        // compute_nu();
+        compute_a();
+        compute_e();
+        compute_nu();
+
+        
         //place_a();
         //place_e();
         //place_i();
@@ -89,14 +98,19 @@ public class Orbit : MonoBehaviour
         {
             localPosition.x = -0.01f;
         }
+        if (localPosition.x >= e_node.localPosition.x)
+        {
+            localPosition.x = 1.01f * e_node.localPosition.x;
+        }
         localPosition.y = 0;
         localPosition.z = 0;
+
+        a = Mathf.Abs(a_node.localPosition.x) / (1 + e); //Mathf.Abs(a_node.localPosition.x) is the distance to apoapsis r_a
 
         a_node.localPosition = localPosition;
 
         //Vector3 r_p = a_node.position - transform.position;
         //a = r_p.magnitude / (1 + e);
-        a = Mathf.Abs(a_node.localPosition.x) / (1 + e); //Mathf.Abs(a_node.localPosition.x) is the distance to apoapsis r_a
     }
     
     void compute_e()
@@ -109,12 +123,13 @@ public class Orbit : MonoBehaviour
         localPosition.y = 0;
         localPosition.z = 0;
         //localPosition.x = a_node.localPosition.x * e;
-
+        e = e_node.localPosition.x / a_node.localPosition.x;
 
         e_node.localPosition = localPosition;
+
+
         //Vector3 e2 = e_node.position - transform.position;
         //e = e2.magnitude / 2;
-        e = e_node.localPosition.x / a_node.localPosition.x;
     }
   
     void compute_RAAN()
@@ -122,13 +137,16 @@ public class Orbit : MonoBehaviour
         Vector3 localPosition = RAAN_node.localPosition;
         float x_prev = localPosition.x;
         float z_prev = localPosition.z;
-        localPosition.x = a * (1 - e * e) * x_prev / Mathf.Sqrt(x_prev * x_prev + z_prev * z_prev);
-        localPosition.z = a * (1 - e * e) * z_prev / Mathf.Sqrt(x_prev * x_prev + z_prev * z_prev);
+        float r = a * (1 - e * e) / (1 + e * Mathf.Cos(-omega));
+        localPosition.x = r * x_prev / Mathf.Sqrt(x_prev * x_prev + z_prev * z_prev);
+        localPosition.z = r * z_prev / Mathf.Sqrt(x_prev * x_prev + z_prev * z_prev);
         localPosition.y = 0;
+        RAAN = Mathf.Atan2(localPosition.z, localPosition.x); 
 
-        RAAN_node.localPosition = localPosition;
+        RAAN_node.localPosition = localPosition; 
+
+
         //omega = Vector3.Angle(omega_node.position, RAAN_node.position);//.Atan2(RAAN_vec.z, RAAN_vec.x);
-        RAAN = Mathf.Atan2(localPosition.z, localPosition.x);
         //Vector3 RAAN_vec = RAAN_node.position - transform.position;
         //RAAN = Mathf.Atan2(RAAN_vec.z, RAAN_vec.x);
     }
@@ -136,14 +154,16 @@ public class Orbit : MonoBehaviour
     void compute_i()
     {
         Vector3 localPosition = i_node.localPosition;
-        i = Mathf.Atan2(localPosition.y, localPosition.z);
         float z_prev = localPosition.z;
         float y_prev = localPosition.y;
-        localPosition.z = a * (1 - e * e) * z_prev / Mathf.Sqrt(z_prev * z_prev + y_prev * y_prev);  
-        localPosition.y = a * (1 - e * e) * y_prev / Mathf.Sqrt(z_prev * z_prev + y_prev * y_prev); 
+        float r = a * (1 - e * e) / (1 + e * Mathf.Cos(-omega + Mathf.Deg2Rad*90));
+        localPosition.z = r * z_prev / Mathf.Sqrt(z_prev * z_prev + y_prev * y_prev);  
+        localPosition.y = r * y_prev / Mathf.Sqrt(z_prev * z_prev + y_prev * y_prev); 
         localPosition.x = 0;
+        i = Mathf.Atan2(localPosition.y, localPosition.z);
 
         i_node.localPosition = localPosition;
+
         //omega = Vector3.Angle(omega_node.position, RAAN_node.position);//.Atan2(RAAN_vec.z, RAAN_vec.x);
         
         //Vector3 RAAN_vec = RAAN_node.position - transform.position;
@@ -158,16 +178,60 @@ public class Orbit : MonoBehaviour
         localPosition.x = a * (1 - e) * x_prev / Mathf.Sqrt(x_prev * x_prev + z_prev * z_prev);
         localPosition.z = a * (1 - e) * z_prev / Mathf.Sqrt(x_prev * x_prev + z_prev * z_prev);
         localPosition.y = 0;
+        
+        omega = Mathf.Atan2(localPosition.z, localPosition.x);
 
         omega_node.localPosition = localPosition;
+
+
         //omega = Vector3.Angle(omega_node.position, RAAN_node.position);//.Atan2(RAAN_vec.z, RAAN_vec.x);
-        omega = Mathf.Atan2(localPosition.z, localPosition.x);
     }
-    /*
+    
     void compute_nu()
     {
         //        Vector3 omega_vec = omega_node.position - RAAN_node.position;
-        nu = Vector3.Angle(nu_node.position, omega_node.position);//.Atan2(RAAN_vec.z, RAAN_vec.x);
+        Vector3 localPosition = nu_node.localPosition;
+        float r = a * (1 - e * e) / (1 + e * Mathf.Cos(nu));
+        float x_prev = localPosition.x;
+        float z_prev = localPosition.z;
+
+        localPosition.x = r * x_prev / Mathf.Sqrt(x_prev * x_prev + z_prev * z_prev);
+        localPosition.z = r * z_prev / Mathf.Sqrt(x_prev * x_prev + z_prev * z_prev);
+        localPosition.y = 0;
+        nu = Mathf.Atan2(localPosition.z, localPosition.x);
+
+        nu_node.localPosition = localPosition;
+
+
+        //omega = Vector3.Angle(omega_node.position, RAAN_node.position);//.Atan2(RAAN_vec.z, RAAN_vec.x);
+
+        //        Vector3 omega_vec = omega_node.position - RAAN_node.position;
+        //nu = Vector3.Angle(nu_node.position, omega_node.position);//.Atan2(RAAN_vec.z, RAAN_vec.x);
     }
-    */
+
+    void auto_nu()
+    {
+        //        Vector3 omega_vec = omega_node.position - RAAN_node.position;
+        float n = Mathf.Sqrt(1f / (a * a * a));
+        float M = n * (float)Time.fixedUnscaledTimeAsDouble;
+        nu += Mathf.Deg2Rad * 1f;
+
+        Vector3 localPosition = nu_node.localPosition;
+        float r = a * (1 - e * e) / (1 + e * Mathf.Cos(nu));
+        
+        localPosition.x = r * Mathf.Cos(nu);
+        localPosition.z = r * Mathf.Sin(nu);
+        localPosition.y = 0;
+        
+        nu = Mathf.Atan2(localPosition.z, localPosition.x);
+
+        nu_node.localPosition = localPosition;
+
+
+        //omega = Vector3.Angle(omega_node.position, RAAN_node.position);//.Atan2(RAAN_vec.z, RAAN_vec.x);
+
+        //        Vector3 omega_vec = omega_node.position - RAAN_node.position;
+        //nu = Vector3.Angle(nu_node.position, omega_node.position);//.Atan2(RAAN_vec.z, RAAN_vec.x);
+    }
+
 }

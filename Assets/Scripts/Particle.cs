@@ -13,7 +13,7 @@ public class Particle : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Debug.Log("Starting");
+        //Debug.Log("Starting");
         rb = GetComponent<Rigidbody>();
         _activated = true;
         rb.useGravity = false;
@@ -57,14 +57,14 @@ public class Particle : MonoBehaviour
     {
         if (Particles == null)
             Particles = new List<Particle>();
-        Debug.Log("Adding to Particles List");
+        //Debug.Log("Adding to Particles List");
         Particles.Add(this);
-        Debug.Log(Particles.Count);
+        //Debug.Log(Particles.Count);
     }
 
     void OnDisable()
     {
-        Debug.Log("Removing from Particles List");
+        //Debug.Log("Removing from Particles List");
         Particles.Remove(this);
     }
     void Attract(Particle particle)

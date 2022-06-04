@@ -13,6 +13,6 @@ public class earthRotator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        GetComponent<Rigidbody>().angularVelocity = new Vector3(0, -0.1f, 0);
     }
 }

@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class Follower : MonoBehaviour
 {
-    public Rigidbody target;
+    public Transform target;
+    public GameObject orbit;
     Rigidbody rb;
     // Start is called before the first frame update
     void Start()
@@ -13,11 +14,15 @@ public class Follower : MonoBehaviour
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
-        Vector3 relvec = target.position - rb.position;
-        if (relvec.magnitude > 0.01)
-            rb.MovePosition(target.position);
+
+        //Vector3 relvec = target.position - rb.position;
+        //if (relvec.magnitude > 0.01)
+        //Debug.Log("I should be following");
+        Physics.SyncTransforms();
+
+        rb.MovePosition(target.transform.position);
     }
 
 }
